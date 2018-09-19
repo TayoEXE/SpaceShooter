@@ -26,14 +26,17 @@
     var finishArea;
     var myBackground;
     var sndCrash;
+    var sndMusic;
     const PIECE_SPEED = 3;
     
     function startGame() {
+        sndMusic = new sound("Music.mp3", true);
+        sndMusic.play();
         myGameArea.start();
         myGamePiece = new component(30, 30, "spaceCraft.jpg", 50, myGameArea.canvas.height/2, "img");
         finishArea = new component(50, 50, "world.jpg", myGameArea.canvas.width-(myGameArea.canvas.width*0.1), myGameArea.canvas.height/2, "img");
         myBackground = new component(myGameArea.canvas.width*2, myGameArea.canvas.height, "space.jpg", 0, 0, "img");
-        sndCrash = new sound("Explosive 03.mp3");
+        sndCrash = new sound("Explosion03.mp3", false);
         myBackground.speedX = -10;
     }
     
@@ -54,18 +57,22 @@
                 myGameArea.keys[e.keyCode] = (e.type == "keydown");            
             })
         }, 
+        stop : function() {
+            clearInterval(this.interval);
+        },  
         clear : function(){
             this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         }
     }
     
-    function sound(src) {
+    function sound(src, isLooped) {
         this.sound = document.createElement("audio");
         this.sound.src = src;
         this.sound.setAttribute("preload", "auto");
         this.sound.setAttribute("controls", "none");
         this.sound.style.display = "none";
         document.body.appendChild(this.sound);
+        this.sound.loop = isLooped;
         this.play = function(){
             this.sound.play();
         }
@@ -122,7 +129,6 @@
 
     function updateGameArea() {
         if (myGamePiece.crashWith(finishArea)) {
-            sndCrash.play();
             document.getElementById("winOrLose").innerHTML = "You Win!!!";
             myGameArea.stop();
         }
@@ -130,6 +136,7 @@
             for(i = 0; i <obstacles.length; i += 1) {
                 if(myGamePiece.crashWith(obstacles[i]))
                 {
+                    sndCrash.play();
                     document.getElementById("winOrLose").innerHTML = "You Lose :(";
                     myGameArea.stop();
                 }
@@ -137,6 +144,7 @@
             for(i = 0; i <fallingObstacles.length; i += 1) {
                 if(myGamePiece.crashWith(fallingObstacles[i]))
                 {
+                    sndCrash.play();
                     document.getElementById("winOrLose").innerHTML = "You Lose :(";
                     myGameArea.stop();
                 }
@@ -144,6 +152,7 @@
             for(i = 0; i <floatingObstacles.length; i += 1) {
                 if(myGamePiece.crashWith(floatingObstacles[i]))
                 {
+                    sndCrash.play();
                     document.getElementById("winOrLose").innerHTML = "You Lose :(";
                     myGameArea.stop();
                 }
