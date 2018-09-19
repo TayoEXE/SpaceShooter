@@ -24,6 +24,7 @@
     </style>
 </head>
 <body onload="startGame()">
+    <audio id="MusicPlay"></audio>
     <script>
     
     var i;
@@ -38,17 +39,19 @@
     var myBackground;
     var sndCrash;
     var sndMusic;
+    var sndWin;
     const PIECE_SPEED = 3;
     
     function startGame() {
-        sndMusic = new sound("Music.mp3", true);
-        sndMusic.play();
         myGameArea.start();
         myGamePiece = new component(30, 30, "spaceCraft.jpg", 50, myGameArea.canvas.height/2, "img");
         finishArea = new component(50, 50, "world.jpg", myGameArea.canvas.width-(myGameArea.canvas.width*0.1), myGameArea.canvas.height/2, "img");
         myBackground = new component(myGameArea.canvas.width*2, myGameArea.canvas.height, "space.jpg", 0, 0, "img");
         sndCrash = new sound("Explosion03.mp3", false);
+        sndWin = new sound("winSound.wav", false);
         myBackground.speedX = -10;
+        sndMusic = new sound("Music.mp3", true);
+        sndMusic.play();
     }
     
     var myGameArea = {
@@ -85,7 +88,13 @@
         document.body.appendChild(this.sound);
         this.sound.loop = isLooped;
         this.play = function(){
-            this.sound.play();
+            try {
+                this.sound.play();
+            }
+            catch (e) {
+                console.log(e.message);
+            }
+
         }
         this.stop = function(){
             this.sound.pause();
@@ -141,6 +150,8 @@
     function updateGameArea() {
         if (myGamePiece.crashWith(finishArea)) {
             document.getElementById("winOrLose").innerHTML = "You Win!!!";
+            sndWin.play();
+            sndMusic.stop();
             myGameArea.stop();
         }
         else {
@@ -148,6 +159,7 @@
                 if(myGamePiece.crashWith(obstacles[i]))
                 {
                     sndCrash.play();
+                    sndMusic.stop();
                     document.getElementById("winOrLose").innerHTML = "You Lose :(";
                     myGameArea.stop();
                 }
@@ -156,6 +168,7 @@
                 if(myGamePiece.crashWith(fallingObstacles[i]))
                 {
                     sndCrash.play();
+                    sndMusic.stop();
                     document.getElementById("winOrLose").innerHTML = "You Lose :(";
                     myGameArea.stop();
                 }
@@ -164,6 +177,7 @@
                 if(myGamePiece.crashWith(floatingObstacles[i]))
                 {
                     sndCrash.play();
+                    sndMusic.stop();
                     document.getElementById("winOrLose").innerHTML = "You Lose :(";
                     myGameArea.stop();
                 }
