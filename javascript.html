@@ -1,0 +1,231 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link href="javascript.css" rel ="stylesheet" type="text/css">
+    <style>
+        canvas {
+            border:1px solid #d3d3d3;
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body onload="startGame()">
+    <script>
+    
+    var i;
+    var myGamePiece;
+    var obstacles = [];
+    var fallingObstacles = [];
+    var floatingObstacles = [];
+    var obstacleX;
+    var obstacleX2;
+    var obstacleY;
+    var finishArea;
+    var myBackground;
+    var sndCrash;
+    const PIECE_SPEED = 3;
+    
+    function startGame() {
+        myGameArea.start();
+        myGamePiece = new component(30, 30, "spaceCraft.jpg", 50, myGameArea.canvas.height/2, "img");
+        finishArea = new component(50, 50, "world.jpg", myGameArea.canvas.width-(myGameArea.canvas.width*0.1), myGameArea.canvas.height/2, "img");
+        myBackground = new component(myGameArea.canvas.width*2, myGameArea.canvas.height, "space.jpg", 0, 0, "img");
+        sndCrash = new sound("Explosive 03.mp3");
+        myBackground.speedX = -10;
+    }
+    
+    var myGameArea = {
+        canvas : document.createElement("canvas"),
+        start : function() {
+            this.canvas.width = screen.width - (screen.width * 0.02);
+            this.canvas.height = screen.height/2;
+            this.context = this.canvas.getContext("2d");
+            document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+            this.frameNo = 0;
+            this.interval = setInterval(updateGameArea, 20);
+            window.addEventListener('keydown', function (e) {
+            myGameArea.keys = (myGameArea.keys || []);
+            myGameArea.keys[e.keyCode] = (e.type == "keydown");
+            })
+            window.addEventListener('keyup', function (e) {
+                myGameArea.keys[e.keyCode] = (e.type == "keydown");            
+            })
+        }, 
+        clear : function(){
+            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+    }
+    
+    function sound(src) {
+        this.sound = document.createElement("audio");
+        this.sound.src = src;
+        this.sound.setAttribute("preload", "auto");
+        this.sound.setAttribute("controls", "none");
+        this.sound.style.display = "none";
+        document.body.appendChild(this.sound);
+        this.play = function(){
+            this.sound.play();
+        }
+        this.stop = function(){
+            this.sound.pause();
+        }
+    }
+
+    function component(width, height, color, x, y, type) {
+        this.type = type;
+        if (type == "img") {
+            this.image = new Image();
+            this.image.src = color;
+        }
+        this.gamearea = myGameArea;
+        this.width = width;
+        this.height = height;
+        this.speedX = 0;
+        this.speedY = 0;    
+        this.x = x;
+        this.y = y;    
+        this.update = function() {
+        var ctx = myGameArea.context;
+        if (type == "img") {
+            ctx.drawImage(this.image, 
+                this.x, 
+                this.y,
+                this.width, this.height);
+        } else {
+            ctx.fillStyle = color;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+    }
+        this.newPos = function() {
+            this.x += this.speedX;
+            this.y += this.speedY;        
+        }
+        this.crashWith = function(otherobj) {
+            var myleft = this.x;
+            var myright = this.x + (this.width);
+            var mytop = this.y;
+            var mybottom = this.y + (this.height);
+            var otherleft = otherobj.x;
+            var otherright = otherobj.x + (otherobj.width);
+            var othertop = otherobj.y;
+            var otherbottom = otherobj.y + (otherobj.height);
+            var crash = true;
+            if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
+                crash = false;
+            }
+            return crash;
+        }
+    }
+
+    function updateGameArea() {
+        if (myGamePiece.crashWith(finishArea)) {
+            sndCrash.play();
+            document.getElementById("winOrLose").innerHTML = "You Win!!!";
+            myGameArea.stop();
+        }
+        else {
+            for(i = 0; i <obstacles.length; i += 1) {
+                if(myGamePiece.crashWith(obstacles[i]))
+                {
+                    document.getElementById("winOrLose").innerHTML = "You Lose :(";
+                    myGameArea.stop();
+                }
+            }
+            for(i = 0; i <fallingObstacles.length; i += 1) {
+                if(myGamePiece.crashWith(fallingObstacles[i]))
+                {
+                    document.getElementById("winOrLose").innerHTML = "You Lose :(";
+                    myGameArea.stop();
+                }
+            }
+            for(i = 0; i <floatingObstacles.length; i += 1) {
+                if(myGamePiece.crashWith(floatingObstacles[i]))
+                {
+                    document.getElementById("winOrLose").innerHTML = "You Lose :(";
+                    myGameArea.stop();
+                }
+            }
+            
+            myGameArea.clear();
+            
+            
+            myBackground.newPos();
+            wrapBackground();
+            myBackground.update();
+            
+            myGameArea.frameNo += 1;
+            if (myGameArea.frameNo == 1 || everyinterval(40)) {
+                obstacleX = Math.floor(Math.random() * (myGameArea.canvas.width - 100));
+                obstacleX2 = Math.floor(Math.random() * (myGameArea.canvas.width - 100));
+                obstacleY = Math.floor(Math.random() * (myGameArea.canvas.height - 100));
+                obstacles.push(new component(10, 100, "verticleLaser.jpg", myGameArea.canvas.width, obstacleY, "img"));
+                fallingObstacles.push(new component(100, 10, "horizontalLaser.jpg", obstacleX, 0, "img"));
+                floatingObstacles.push(new component(100, 10, "horizontalLaser.jpg", obstacleX2, myGameArea.canvas.height, "img"));
+            }
+            for (i = 0; i < obstacles.length; i += 1) {
+                obstacles[i].x += -1;
+                obstacles[i].update();
+            }
+            for (i = 0; i < fallingObstacles.length; i += 1) {
+                fallingObstacles[i].y += 1;
+                fallingObstacles[i].update();
+            }
+            for (i = 0; i < floatingObstacles.length; i += 1) {
+                floatingObstacles[i].y += -1;
+                floatingObstacles[i].update();
+            }
+        
+            myGamePiece.speedX = 0;
+            myGamePiece.speedY = 0;
+            getMoveDirection(myGameArea.keys, myGamePiece, PIECE_SPEED);
+            
+            myGamePiece.newPos();
+            myGamePiece.update();
+        
+            finishArea.speedX = 0;
+            finishArea.speedY = 0;
+            getFinishDirection(myGameArea.keys, finishArea, PIECE_SPEED);
+            
+            finishArea.newPos();
+            finishArea.update();
+        }
+    }
+    function everyinterval(n) {
+        if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
+        return false;
+    }
+    
+    function getMoveDirection(keys, piece, speed) {
+        if (keys) {
+            if (keys[37]) {piece.speedX = -speed; }
+            if (keys[39]) {piece.speedX = speed; }
+            if (keys[38]) {piece.speedY = -speed; }
+            if (keys[40]) {piece.speedY = speed; }
+        } 
+    }
+
+    function getFinishDirection(keys, piece, speed) {
+        if (keys) {
+            if (keys[72]) {piece.speedX = -speed; }
+            if (keys[76]) {piece.speedX = speed; }
+            if (keys[69]) {piece.speedY = -speed; }
+            if (keys[80]) {piece.speedY = speed; }
+        } 
+    }
+    
+    function wrapBackground() {
+        if (myBackground.x <= -(myBackground.width/2)) {
+            myBackground.x = 0;
+        }
+    }
+</script>
+<input type="button" value="Restart" onClick="document.location.reload(true)">
+<p id="winOrLose" style="font-size:2em;"></p>
+<p>Use the arrow keys to move the spaceship to the planet.</p>
+<p>Watch out for the red obstacles!</p>
+<p style="font-size:0.5em;">If you desperately need it, try typing "help".</p>
+</body>
+</html>
